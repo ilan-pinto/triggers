@@ -110,6 +110,7 @@ func (r Sink) emitEvents(recorder record.EventRecorder, el *triggersv1.EventList
 
 // HandleEvent processes an incoming HTTP event for the event listener.
 func (r Sink) HandleEvent(response http.ResponseWriter, request *http.Request) {
+
 	log := r.Logger.With(
 		zap.String("eventlistener", r.EventListenerName),
 		zap.String("namespace", r.EventListenerNamespace),
@@ -407,6 +408,10 @@ func (r Sink) selectTriggers(namespaceSelector triggersv1.NamespaceSelector, lab
 func (r Sink) processTrigger(t triggersv1.Trigger, el *triggersv1.EventListener, request *http.Request, event []byte, eventID string, eventLog *zap.SugaredLogger, extensions map[string]interface{}) {
 	log := eventLog.With(zap.String(triggers.TriggerLabelKey, t.Name))
 
+	log.Infof("*** request: %v", request)
+	log.Infof("*** event: %v", event)
+	log.Infof("*** extensions: %v", extensions)
+
 	finalPayload, header, iresp, err := r.ExecuteTriggerInterceptors(t, request, event, log, eventID, extensions)
 	if err != nil {
 		log.Error(err)
@@ -431,6 +436,7 @@ func (r Sink) processTrigger(t triggersv1.Trigger, el *triggersv1.EventListener,
 	if iresp != nil && iresp.Extensions != nil {
 		extensions = iresp.Extensions
 	}
+
 	params, err := template.ResolveParams(rt, finalPayload, header, extensions, template.NewTriggerContext(eventID))
 	if err != nil {
 		log.Error(err)
@@ -461,8 +467,6 @@ func (r Sink) ExecuteInterceptors(trInt []*triggersv1.TriggerInterceptor, in *ht
 		return event, in.Header, nil, nil
 	}
 
-	// request is the request sent to the interceptors in the chain. Each interceptor can set the InterceptorParams field
-	// or add to the Extensions
 	request := triggersv1.InterceptorRequest{
 		Body:       string(event),
 		Header:     in.Header.Clone(),
@@ -474,6 +478,9 @@ func (r Sink) ExecuteInterceptors(trInt []*triggersv1.TriggerInterceptor, in *ht
 			TriggerID: triggerID,
 		},
 	}
+
+	// request is the request sent to the interceptors in the chain. Each interceptor can set the InterceptorParams field
+	// or add to the Extensions
 
 	for _, i := range trInt {
 		if i.Webhook != nil { // Old style interceptor
@@ -488,6 +495,7 @@ func (r Sink) ExecuteInterceptors(trInt []*triggersv1.TriggerInterceptor, in *ht
 				Body:   io.NopCloser(bytes.NewBuffer(body)),
 			}
 			interceptor := webhook.NewInterceptor(i.Webhook, r.HTTPClient, namespace, log)
+
 			res, err := interceptor.ExecuteTrigger(req)
 			if err != nil {
 				return nil, nil, nil, err
@@ -554,6 +562,18 @@ func (r Sink) ExecuteInterceptors(trInt []*triggersv1.TriggerInterceptor, in *ht
 		}
 		// Clear interceptorParams for the next interceptor in chain
 		request.InterceptorParams = map[string]interface{}{}
+
+		// handle form-data payload for slack only
+		if v := in.Header.Get("X-Slack-Signature"); v != "" {
+			jsonBody, err := json.Marshal(request.Body)
+			if err != nil {
+				body, _ := io.ReadAll(in.Body)
+				request.Body = string(body)
+			} else {
+				request.Body = string(jsonBody)
+			}
+		}
+
 	}
 	return []byte(request.Body), request.Header, &triggersv1.InterceptorResponse{
 		Continue:   true,

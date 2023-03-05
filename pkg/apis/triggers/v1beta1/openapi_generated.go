@@ -47,6 +47,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.GitHubInterceptor":            schema_pkg_apis_triggers_v1beta1_GitHubInterceptor(ref),
 		"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.GitLabInterceptor":            schema_pkg_apis_triggers_v1beta1_GitLabInterceptor(ref),
 		"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.GithubAddChangedFiles":        schema_pkg_apis_triggers_v1beta1_GithubAddChangedFiles(ref),
+		"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.GithubOwners":                 schema_pkg_apis_triggers_v1beta1_GithubOwners(ref),
 		"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.InterceptorParams":            schema_pkg_apis_triggers_v1beta1_InterceptorParams(ref),
 		"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.InterceptorRef":               schema_pkg_apis_triggers_v1beta1_InterceptorRef(ref),
 		"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.InterceptorRequest":           schema_pkg_apis_triggers_v1beta1_InterceptorRequest(ref),
@@ -57,6 +58,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.ParamSpec":                    schema_pkg_apis_triggers_v1beta1_ParamSpec(ref),
 		"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.Resources":                    schema_pkg_apis_triggers_v1beta1_Resources(ref),
 		"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.SecretRef":                    schema_pkg_apis_triggers_v1beta1_SecretRef(ref),
+		"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.SlackInterceptor":             schema_pkg_apis_triggers_v1beta1_SlackInterceptor(ref),
 		"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.Status":                       schema_pkg_apis_triggers_v1beta1_Status(ref),
 		"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.StatusError":                  schema_pkg_apis_triggers_v1beta1_StatusError(ref),
 		"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.Trigger":                      schema_pkg_apis_triggers_v1beta1_Trigger(ref),
@@ -742,11 +744,17 @@ func schema_pkg_apis_triggers_v1beta1_GitHubInterceptor(ref common.ReferenceCall
 							Ref:     ref("github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.GithubAddChangedFiles"),
 						},
 					},
+					"githubOwners": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.GithubOwners"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.GithubAddChangedFiles", "github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.SecretRef"},
+			"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.GithubAddChangedFiles", "github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.GithubOwners", "github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.SecretRef"},
 	}
 }
 
@@ -804,6 +812,39 @@ func schema_pkg_apis_triggers_v1beta1_GithubAddChangedFiles(ref common.Reference
 					"personalAccessToken": {
 						SchemaProps: spec.SchemaProps{
 							Ref: ref("github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.SecretRef"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.SecretRef"},
+	}
+}
+
+func schema_pkg_apis_triggers_v1beta1_GithubOwners(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"enabled": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"personalAccessToken": {
+						SchemaProps: spec.SchemaProps{
+							Description: "This param/variable is required for private repos or when checkType is set to orgMembers or repoMembers or all",
+							Ref:         ref("github.com/tektoncd/triggers/pkg/apis/triggers/v1beta1.SecretRef"),
+						},
+					},
+					"checkType": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Set the value to one of the supported values (orgMembers, repoMembers, both, none)",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
@@ -1181,6 +1222,37 @@ func schema_pkg_apis_triggers_v1beta1_SecretRef(ref common.ReferenceCallback) co
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_triggers_v1beta1_SlackInterceptor(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"requestedFields": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
 						},
 					},
 				},

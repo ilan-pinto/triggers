@@ -1,11 +1,3 @@
-<!--
----
-title: Triggers API
-linkTitle: Triggers API
-weight: 1000
----
--->
-
 <p>Packages:</p>
 <ul>
 <li>
@@ -1412,6 +1404,17 @@ map[string][]string
 </td>
 <td>
 <p>Header are the headers for the incoming HTTP event</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>form</code><br/>
+<em>
+map[string][]string
+</em>
+</td>
+<td>
+<p>Form is the form data for the incoming HTTP event</p>
 </td>
 </tr>
 <tr>
@@ -3256,6 +3259,34 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="triggers.tekton.dev/v1beta1.CheckType">CheckType
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#triggers.tekton.dev/v1beta1.GithubOwners">GithubOwners</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;all&#34;</p></td>
+<td><p>Set the checkType to all if both repo members or org members can submit or comment on PR to proceed</p>
+</td>
+</tr><tr><td><p>&#34;none&#34;</p></td>
+<td><p>Set the checkType to none if neither of repo members or org members can not submit or comment on PR to proceed</p>
+</td>
+</tr><tr><td><p>&#34;orgMembers&#34;</p></td>
+<td><p>Set the checkType to orgMembers to allow org members to submit or comment on PR to proceed</p>
+</td>
+</tr><tr><td><p>&#34;repoMembers&#34;</p></td>
+<td><p>Set the checkType to repoMembers to allow repo members to submit or comment on PR to proceed</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="triggers.tekton.dev/v1beta1.CustomResource">CustomResource
 </h3>
 <p>
@@ -3716,6 +3747,18 @@ GithubAddChangedFiles
 <td>
 </td>
 </tr>
+<tr>
+<td>
+<code>githubOwners</code><br/>
+<em>
+<a href="#triggers.tekton.dev/v1beta1.GithubOwners">
+GithubOwners
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="triggers.tekton.dev/v1beta1.GitLabInterceptor">GitLabInterceptor
@@ -3790,6 +3833,59 @@ SecretRef
 </em>
 </td>
 <td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="triggers.tekton.dev/v1beta1.GithubOwners">GithubOwners
+</h3>
+<p>
+(<em>Appears on:</em><a href="#triggers.tekton.dev/v1beta1.GitHubInterceptor">GitHubInterceptor</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>enabled</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>personalAccessToken</code><br/>
+<em>
+<a href="#triggers.tekton.dev/v1beta1.SecretRef">
+SecretRef
+</a>
+</em>
+</td>
+<td>
+<p>This param/variable is required for private repos or when checkType is set to orgMembers or repoMembers or all</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>checkType</code><br/>
+<em>
+<a href="#triggers.tekton.dev/v1beta1.CheckType">
+CheckType
+</a>
+</em>
+</td>
+<td>
+<p>Set the value to one of the supported values (orgMembers, repoMembers, both, none)</p>
 </td>
 </tr>
 </tbody>
@@ -4284,7 +4380,7 @@ CustomResource
 <h3 id="triggers.tekton.dev/v1beta1.SecretRef">SecretRef
 </h3>
 <p>
-(<em>Appears on:</em><a href="#triggers.tekton.dev/v1beta1.BitbucketInterceptor">BitbucketInterceptor</a>, <a href="#triggers.tekton.dev/v1beta1.GitHubInterceptor">GitHubInterceptor</a>, <a href="#triggers.tekton.dev/v1beta1.GitLabInterceptor">GitLabInterceptor</a>, <a href="#triggers.tekton.dev/v1beta1.GithubAddChangedFiles">GithubAddChangedFiles</a>)
+(<em>Appears on:</em><a href="#triggers.tekton.dev/v1beta1.BitbucketInterceptor">BitbucketInterceptor</a>, <a href="#triggers.tekton.dev/v1beta1.GitHubInterceptor">GitHubInterceptor</a>, <a href="#triggers.tekton.dev/v1beta1.GitLabInterceptor">GitLabInterceptor</a>, <a href="#triggers.tekton.dev/v1beta1.GithubAddChangedFiles">GithubAddChangedFiles</a>, <a href="#triggers.tekton.dev/v1beta1.GithubOwners">GithubOwners</a>)
 </p>
 <div>
 <p>SecretRef contains the information required to reference a single secret string
@@ -4314,6 +4410,30 @@ string
 <code>secretName</code><br/>
 <em>
 string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="triggers.tekton.dev/v1beta1.SlackInterceptor">SlackInterceptor
+</h3>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>requestedFields</code><br/>
+<em>
+[]string
 </em>
 </td>
 <td>

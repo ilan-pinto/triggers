@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -1456,6 +1457,73 @@ func TestExecuteInterceptor_error(t *testing.T) {
 	if si.called {
 		t.Error("expected sequential interceptor to not be called")
 	}
+}
+
+// tests sink handles request with http form data
+func TestExecuteInterceptor_Form(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+
+	resources := test.Resources{
+		ClusterInterceptors: []*triggersv1alpha1.ClusterInterceptor{cel},
+		Interceptors:        []*triggersv1alpha1.Interceptor{nsInterceptor},
+	}
+	s, _ := getSinkAssets(t, resources, "el-name", nil)
+
+	trigger := triggersv1beta1.Trigger{
+		Spec: triggersv1beta1.TriggerSpec{
+			Interceptors: []*triggersv1beta1.EventInterceptor{{
+				Ref: triggersv1beta1.InterceptorRef{Name: "cel", Kind: triggersv1beta1.ClusterInterceptorKind},
+			}}},
+	}
+
+	req, err := http.NewRequest(http.MethodPost, "/", nil)
+	if err != nil {
+		t.Fatalf("http.NewRequest: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	// form data
+	data := url.Values{}
+	data.Set("name", "Alice")
+	data.Add("hobby", "reading")
+	req.Body = io.NopCloser(bytes.NewBuffer(json.RawMessage(`{"head": "blah"}`)))
+
+	if resp, _, _, err := s.ExecuteTriggerInterceptors(trigger, req, nil, logger.Sugar(), eventID, map[string]interface{}{}); err != nil {
+		t.Errorf("got the following error: %+v, %v", string(resp), err)
+	}
+
+}
+
+func TestExecuteInterceptor_Form_no_headers(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+
+	resources := test.Resources{
+		ClusterInterceptors: []*triggersv1alpha1.ClusterInterceptor{cel},
+		Interceptors:        []*triggersv1alpha1.Interceptor{nsInterceptor},
+	}
+	s, _ := getSinkAssets(t, resources, "el-name", nil)
+
+	trigger := triggersv1beta1.Trigger{
+		Spec: triggersv1beta1.TriggerSpec{
+			Interceptors: []*triggersv1beta1.EventInterceptor{{
+				Ref: triggersv1beta1.InterceptorRef{Name: "cel", Kind: triggersv1beta1.ClusterInterceptorKind},
+			}}},
+	}
+
+	req, err := http.NewRequest(http.MethodPost, "/", nil)
+	if err != nil {
+		t.Fatalf("http.NewRequest: %v", err)
+	}
+	// form data
+	data := url.Values{}
+	data.Set("name", "Alice")
+	data.Add("hobby", "reading")
+	req.Form = data
+	req.Body = io.NopCloser(bytes.NewBuffer(json.RawMessage(`{"head": "blah"}`)))
+
+	if resp, _, _, err := s.ExecuteTriggerInterceptors(trigger, req, nil, logger.Sugar(), eventID, map[string]interface{}{}); err != nil {
+		t.Errorf("got the following error: %+v, %v", string(resp), err)
+	}
+
 }
 
 func TestExecuteInterceptor_NotContinue(t *testing.T) {

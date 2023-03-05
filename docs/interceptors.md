@@ -14,6 +14,7 @@ weight: 5
 - [Bitbucket `Interceptors`](#bitbucket-interceptors)
   - [Bitbucket Server](#bitbucket-server)
   - [Bitbucket Cloud](#bitbucket-cloud)
+- [slack `Interceptors`](#slack-interceptors)
 - [CEL `Interceptors`](#cel-interceptors)
 - [Implementing custom `Interceptors`](#implementing-custom-interceptors)
 
@@ -257,6 +258,54 @@ For more information around adding changed files, see the following examples
 - [github-add-changed-files-pr](../examples/v1beta1/github-add-changed-files-pr)
 - [github-add-changed-files-push-cel](../examples/v1beta1/github-add-changed-files-push-cel)
 
+#### Owners validation for pull requests
+
+The GitHub `Interceptor` supports the ability to halt processing on a pull request if the user is not listed in the [owners](https://www.kubernetes.dev/docs/guide/owners/) file or is not a repository/organization member/owner. This feature can be used to prevent unnecessary execution of a PipelineRun or TaskRun. The GitHub `Interceptor` also supports the ability to trigger a PipelineRun/TaskRun through a comment that contains `/ok-to-test` on a pull request by an owner. 
+
+This feature will also work against private GitHub repositories by supplying a [GitHub personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) in the `personalAccessToken` field.
+
+> NOTE: Owners validation requires (at a minimum) the `pull_request` and `issue_comment` GitHub event types.
+
+To use the GitHub `Interceptor` as a GitHub owners validator, do the following:
+
+1. Create a secret string value.
+2. Configure the `GitHub` webhook with that value.
+3. Create a Kubernetes secret containing your secret value called `SecretRef`.
+4. Pass the Kubernetes secret as a reference to your GitHub `Interceptor`.
+5. Create an owners file and add the list of approvers into the approvers section.
+
+Below is an example GitHub `Interceptor` using owners validation:
+
+```yaml
+ triggers:
+    - name: github-listener
+      interceptors:
+        - ref:
+            name: "github"
+            kind: ClusterInterceptor
+            apiVersion: triggers.tekton.dev
+          params:
+            - name: "secretRef"
+              value:
+                secretName: github-secret
+                secretKey: secretToken
+            - name: "eventTypes"
+              # Owners validation requires (at a minimum) the `pull_request` and `issue_comment` GitHub event types
+              value: ["pull_request", "issue_comment"]
+            - name: "githubOwners"
+              value: 
+                enabled: true
+                # This value is needed for private repos or when checkType is set to orgMembers or repoMembers or all
+                # personalAccessToken:
+                #   secretName: github-token
+                #   secretKey: secretToken
+                checkType: none
+```
+
+For more information around owners file validation, see the following example
+
+- [github-owners](../examples/v1beta1/github-owners)
+
 ### GitLab Interceptors
 
 A GitLab `Interceptor` contains logic that validates and filters GitLab webhooks.
@@ -425,6 +474,38 @@ spec:
       template:
         ref: bitbucket-cloud-template
 ```
+
+### Slack Interceptors
+A Slack `Interceptor` allows you to extract fields from a slack slash command [payload](https://api.slack.com/interactivity/slash-commands#app_command_handling) which are sent in the  http form-data section. 
+the `Interceptor` requests fields extracts the requested fields and appends them to the `extensions`. 
+
+
+```yaml
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: slack-listener
+  annotations:
+    tekton.dev/payload-validation: "false"
+spec:
+  triggers:
+    - name: slack-trigger
+      interceptors:
+        - ref:
+            name: "slack"
+            kind: ClusterInterceptor
+          params:
+            - name: requestedFields
+              value: 
+                - text   
+```
+Note: payload-validation must be disabled by add adding the following annotation 
+
+```yaml
+  annotations:
+    tekton.dev/payload-validation: "false"
+```
+
 
 ### CEL Interceptors
 
