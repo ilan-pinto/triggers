@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	net "net/url"
 	"os"
 	"sync"
 
@@ -475,6 +476,9 @@ func (r Sink) ExecuteInterceptors(trInt []*triggersv1.TriggerInterceptor, in *ht
 		},
 	}
 
+	// request is the request sent to the interceptors in the chain. Each interceptor can set the InterceptorParams field
+	// or add to the Extensions
+
 	for _, i := range trInt {
 		if i.Webhook != nil { // Old style interceptor
 			body, err := extendBodyWithExtensions([]byte(request.Body), request.Extensions)
@@ -554,7 +558,28 @@ func (r Sink) ExecuteInterceptors(trInt []*triggersv1.TriggerInterceptor, in *ht
 		}
 		// Clear interceptorParams for the next interceptor in chain
 		request.InterceptorParams = map[string]interface{}{}
+
+		// parse form-data payload for slack only
+		if v := in.Header.Get("X-Slack-Signature"); v != "" {
+
+			// Parse the query string into a map
+			parsedQuery, err := net.ParseQuery(request.Body)
+			if err != nil {
+				log.Errorf("Error parsing query string:", err)
+				return nil, nil, nil, err
+			}
+
+			// Convert the map into a JSON string
+			jsonString, err := json.Marshal(parsedQuery)
+			if err != nil {
+				log.Errorf("Error converting map to JSON:", err)
+				return nil, nil, nil, err
+			}
+
+			request.Body = string(jsonString)
+		}
 	}
+
 	return []byte(request.Body), request.Header, &triggersv1.InterceptorResponse{
 		Continue:   true,
 		Extensions: request.Extensions,

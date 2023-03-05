@@ -27,8 +27,8 @@ require (
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
 	google.golang.org/grpc v1.53.0
 	google.golang.org/protobuf v1.28.1
-	k8s.io/api v0.25.4
 	gopkg.in/yaml.v2 v2.4.0
+	k8s.io/api v0.25.4
 	k8s.io/apiextensions-apiserver v0.25.3
 	k8s.io/apimachinery v0.25.4
 	k8s.io/client-go v0.25.4
